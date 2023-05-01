@@ -119,8 +119,9 @@ app.get('/login', (req, res) => {
 });
   
 app.post('/login', (req, res) => {
-    const password = req.body.password;
-    if (password === process.env.GUI_PASSWORD) {
+    const password = req.body.password.trim();
+    const expectedPassword = process.env.GUI_PASSWORD.trim();
+    if (password === expectedPassword) {
       req.session.isLoggedIn = true;
       res.redirect('/');
     } else {
