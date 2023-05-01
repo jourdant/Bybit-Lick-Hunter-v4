@@ -13,4 +13,4 @@ COPY . /app
 RUN cp example.env .env
 
 # Start the application with pm2
-CMD ["pm2-runtime", "app.js"]
+CMD ["sh", "entrypoint.sh"]

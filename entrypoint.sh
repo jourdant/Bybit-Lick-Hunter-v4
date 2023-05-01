@@ -1,14 +1,13 @@
 #!/bin/bash
-files=("account.json" "min_order_sizes.json" "research.json" "settings.json")
 
 #copy files to the config root if they don't already exist
-if [[ -z "${CONFIG_ROOT}" ]]; then
-    for item in "${files[@]}"
-    do
-        echo "Processing ${item}..."
-        if [ -f "./$item" ]; then
-            cp "./${item}" "${CONFIG_ROOT}/${item}"
-        fi
+echo "Processing config files..."
+if [[ -z "${CONFIG_ROOT+x}" ]]; then
+  echo "Custom config root NOT set, copying fresh files if they don't already exist..."
+  cp -u /app/config_templates/*.json /app/
 else
-  MY_SCRIPT_VARIABLE="${DEPLOY_ENV}"
+  echo "Custom config root set, copying fresh files if they don't already exist..."
+  cp -u /app/config_templates/*.json $CONFIG_ROOT/
 fi
+
+pm2-runtime /app/app.js
