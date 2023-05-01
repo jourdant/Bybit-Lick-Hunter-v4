@@ -23,6 +23,21 @@ import { loadJson, storeJson, traceTrade } from './utils.js';
 
 dotenv.config();
 
+// Calculate config base path
+var configRootPath = path.resolve("./");
+if (process.env.CONFIG_ROOT && process.env.CONFIG_ROOT.length > 0) {
+    var resolvedConfigRootPath = path.resolve(process.env.CONFIG_ROOT);
+    if (fs.existsSync(resolvedConfigRootPath) == false) logIT(`Could not resolve custom path: ${resolvedConfigRootPath}`);
+    else configRootPath = resolvedConfigRootPath;
+}
+logIT(`Loading config from: ${configRootPath}`);
+
+// set all config file paths
+const accountJsonPath = `${resolvedConfigRootPath}/account.json`;
+const researchJsonPath = `${resolvedConfigRootPath}/research.json`;
+const settingsJsonPath = `${resolvedConfigRootPath}/settings.json`;
+const minOrderSizesJsonPath = `${resolvedConfigRootPath}/min_order_sizes.json`;
+
 // Discord report cron tasks
 if (process.env.USE_DISCORD == "true") {
     const cronTaskDiscordPositionReport = cron.schedule(process.env.DISCORD_REPORT_INTERVALL, () => {
@@ -61,7 +76,7 @@ const stopLossCoins = new Map();
 // tradesStat store metric about current trade
 const tradesHistory = new Map();
 // globalTradesStats store global metric
-const globalStatsPath = "./global_stats.json";
+const globalStatsPath = `${resolvedConfigRootPath}/global_stats.json`;
 var globalTradesStats = {
   trade_count: 0,
   max_loss : 0,
@@ -506,7 +521,7 @@ async function transferFunds(amount) {
 }
 
 async function withdrawFunds() {
-    const settings = JSON.parse(fs.readFileSync('account.json', 'utf8'));
+    const settings = JSON.parse(fs.readFileSync(accountJsonPath, 'utf8'));
 
     if (process.env.WITHDRAW == "true"){
 
@@ -579,12 +594,12 @@ async function getBalance() {
         var balance = availableBalance + usedBalance;
 
         //load settings.json
-        const settings = JSON.parse(fs.readFileSync('account.json', 'utf8'));
+        const settings = JSON.parse(fs.readFileSync(accountJsonPath, 'utf8'));
 
         //check if starting balance is set
         if (settings.startingBalance === 0) {
             settings.startingBalance = balance;
-            fs.writeFileSync('account.json', JSON.stringify(settings, null, 4));
+            fs.writeFileSync(accountJsonPath, JSON.stringify(settings, null, 4));
             var startingBalance = settings.startingBalance;
         }
         else {
@@ -828,7 +843,7 @@ async function takeProfit(symbol, position) {
 
     //load min order size json
 
-    const tickData = JSON.parse(fs.readFileSync('min_order_sizes.json', 'utf8'));
+    const tickData = JSON.parse(fs.readFileSync(minOrderSizesJsonPath, 'utf8'));
 
     try {
         var index = tickData.findIndex(x => x.pair === symbol);
@@ -962,7 +977,7 @@ async function scalp(pair, index, trigger_qty, source, new_trades_disabled = fal
     if (openPositions < process.env.MAX_OPEN_POSITIONS && openPositions !== null) {
         //Long liquidation
         if (liquidationOrders[index].side === "Buy") {
-            const settings = await JSON.parse(fs.readFileSync('settings.json', 'utf8'));
+            const settings = await JSON.parse(fs.readFileSync(settingsJsonPath, 'utf8'));
             var settingsIndex = await settings.pairs.findIndex(x => x.symbol === pair);
             
             if(settingsIndex !== -1) {
@@ -980,7 +995,7 @@ async function scalp(pair, index, trigger_qty, source, new_trades_disabled = fal
                               return;
                             }
                             //load min order size json
-                            const tickData = JSON.parse(fs.readFileSync('min_order_sizes.json', 'utf8'));
+                            const tickData = JSON.parse(fs.readFileSync(minOrderSizesJsonPath, 'utf8'));
                             var index = tickData.findIndex(x => x.pair === pair);
                             var tickSize = tickData[index].tickSize;
                             var decimalPlaces = (tickSize.toString().split(".")[1] || []).length;
@@ -1023,7 +1038,7 @@ async function scalp(pair, index, trigger_qty, source, new_trades_disabled = fal
                             //maxe sure order is less than max order size
                             if ((position.size + settings.pairs[settingsIndex].order_size) < settings.pairs[settingsIndex].max_position_size) {
                                 //load min order size json
-                                const tickData = JSON.parse(fs.readFileSync('min_order_sizes.json', 'utf8'));
+                                const tickData = JSON.parse(fs.readFileSync(minOrderSizesJsonPath, 'utf8'));
                                 var index = tickData.findIndex(x => x.pair === pair);
                                 var tickSize = tickData[index].tickSize;
                                 var decimalPlaces = (tickSize.toString().split(".")[1] || []).length;
@@ -1072,7 +1087,7 @@ async function scalp(pair, index, trigger_qty, source, new_trades_disabled = fal
 
         }
         else {
-            const settings = await JSON.parse(fs.readFileSync('settings.json', 'utf8'));
+            const settings = await JSON.parse(fs.readFileSync(settingsJsonPath, 'utf8'));
             var settingsIndex = await settings.pairs.findIndex(x => x.symbol === pair);
             if(settingsIndex !== -1) {
                 if (liquidationOrders[index].price > settings.pairs[settingsIndex].short_price)  {
@@ -1088,7 +1103,7 @@ async function scalp(pair, index, trigger_qty, source, new_trades_disabled = fal
                               return;
                             }
                             //load min order size json
-                            const tickData = JSON.parse(fs.readFileSync('min_order_sizes.json', 'utf8'));
+                            const tickData = JSON.parse(fs.readFileSync(minOrderSizesJsonPath, 'utf8'));
                             var index = tickData.findIndex(x => x.pair === pair);
                             var tickSize = tickData[index].tickSize;
                             var decimalPlaces = (tickSize.toString().split(".")[1] || []).length;
@@ -1130,7 +1145,7 @@ async function scalp(pair, index, trigger_qty, source, new_trades_disabled = fal
                             //maxe sure order is less than max order size
                             if ((position.size + settings.pairs[settingsIndex].order_size) < settings.pairs[settingsIndex].max_position_size && process.env.USE_DCA_FEATURE == "true") {
                                 //load min order size json
-                                const tickData = JSON.parse(fs.readFileSync('min_order_sizes.json', 'utf8'));
+                                const tickData = JSON.parse(fs.readFileSync(minOrderSizesJsonPath, 'utf8'));
                                 var index = tickData.findIndex(x => x.pair === pair);
                                 var tickSize = tickData[index].tickSize;
                                 var decimalPlaces = (tickSize.toString().split(".")[1] || []).length;
@@ -1377,11 +1392,11 @@ async function getMinTradingSize() {
             }
 
         }
-        fs.writeFileSync('min_order_sizes.json', JSON.stringify(minOrderSizes, null, 4));
+        fs.writeFileSync(minOrderSizesJsonPath, JSON.stringify(minOrderSizes, null, 4));
 
 
         //update settings.json with min order sizes
-        const settings = JSON.parse(fs.readFileSync('settings.json', 'utf8'));
+        const settings = JSON.parse(fs.readFileSync(settingsJsonPath, 'utf8'));
         for (var i = 0; i < minOrderSizes.length; i++) {
             var settingsIndex = settings.pairs.findIndex(x => x.symbol === minOrderSizes[i].pair);
             if(settingsIndex !== -1) {
@@ -1436,7 +1451,7 @@ function sleep(ms) {
 //auto create settings.json file
 async function createSettings() {
     await getMinTradingSize();
-    var minOrderSizes = JSON.parse(fs.readFileSync('min_order_sizes.json'));
+    var minOrderSizes = JSON.parse(fs.readFileSync(minOrderSizesJsonPath));
     //get info from https://api.liquidation.report/public/research
     const url = "https://liquidation.report/api/lickhunter";
     fetch(url)
@@ -1510,7 +1525,7 @@ async function createSettings() {
                 }
             }
         }
-        fs.writeFileSync('settings.json', JSON.stringify(settings, null, 4));
+        fs.writeFileSync(settingsJsonPath, JSON.stringify(settings, null, 4));
 
     }).catch(err => { throw err });
 }
@@ -1532,15 +1547,15 @@ async function updateSettings() {
             if(process.env.UPDATE_MIN_ORDER_SIZING == "true") {
                 await getMinTradingSize();
             }
-            var minOrderSizes = JSON.parse(fs.readFileSync('min_order_sizes.json'));
-            var settingsFile = JSON.parse(fs.readFileSync('settings.json'));
+            var minOrderSizes = JSON.parse(fs.readFileSync(minOrderSizesJsonPath));
+            var settingsFile = JSON.parse(fs.readFileSync(settingsJsonPath));
             const url = "https://liquidation.report/api/lickhunter";
             fetch(url)
             .then(res => res.json())
             .then((out) => {
                 //create settings.json file with multiple pairs
                 //save result to research.json
-                fs.writeFileSync('research.json', JSON.stringify(out, null, 4));
+                fs.writeFileSync(researchJsonPath, JSON.stringify(out, null, 4));
                 var settings = {};
                 settings["pairs"] = [];
                 for (var i = 0; i < out.data.length; i++) {
@@ -1587,14 +1602,14 @@ async function updateSettings() {
                         settingsFile.pairs[settingsIndex].short_price = short_risk;
                     }
                 }
-                fs.writeFileSync('settings.json', JSON.stringify(settingsFile, null, 4));
+                fs.writeFileSync(settingsJsonPath, JSON.stringify(settingsFile, null, 4));
             //if error load research.json file and update settings.json file
             }).catch(
                 err => {
                     logIT(chalk.red("Reaseach API down Attempting to load research.json file, if this continues please contact @Crypt0gnoe or @Atsutane in Discord"));
-                    var minOrderSizes = JSON.parse(fs.readFileSync('min_order_sizes.json'));
-                    var settingsFile = JSON.parse(fs.readFileSync('settings.json'));
-                    var researchFile = JSON.parse(fs.readFileSync('research.json'));
+                    var minOrderSizes = JSON.parse(fs.readFileSync(minOrderSizesJsonPath));
+                    var settingsFile = JSON.parse(fs.readFileSync(settingsJsonPath));
+                    var researchFile = JSON.parse(fs.readFileSync(researchJsonPath));
                     var settings = {};
                     settings["pairs"] = [];
                     for (var i = 0; i < researchFile.data.length; i++) {
@@ -1648,7 +1663,7 @@ async function updateSettings() {
 
 
                     }
-                    fs.writeFileSync('settings.json', JSON.stringify(settingsFile, null, 4));
+                    fs.writeFileSync(settingsJsonPath, JSON.stringify(settingsFile, null, 4));
                 }
             );
         }
@@ -1787,13 +1802,13 @@ function messageWebhook(message) {
 //report webhook
 async function reportWebhook() {
     if(process.env.USE_DISCORD == "true") {
-        const settings = JSON.parse(fs.readFileSync('account.json', 'utf8'));
+        const settings = JSON.parse(fs.readFileSync(accountJsonPath, 'utf8'));
         //fetch balance first if not startingBalance will be null
         var balance = await getBalance();
         //check if starting balance is set
         if (settings.startingBalance === 0) {
             settings.startingBalance = balance;
-            fs.writeFileSync('account.json', JSON.stringify(settings, null, 4));
+            fs.writeFileSync(accountJsonPath, JSON.stringify(settings, null, 4));
             var startingBalance = settings.startingBalance;
         }
         else {
@@ -1920,13 +1935,13 @@ async function main() {
         pairs = await getSymbols();
 
         //load local file acccount.json with out require and see if "config_set" is true
-        var account = JSON.parse(fs.readFileSync('account.json', 'utf8'));
+        var account = JSON.parse(fs.readFileSync(accountJsonPath, 'utf8'));
         if (account.config_set == false) {
             var isSet = await setPositionMode();
             if (isSet == true) {
                 //set to true and save
                 account.config_set = true;
-                fs.writeFileSync('account.json', JSON.stringify(account));
+                fs.writeFileSync(accountJsonPath, JSON.stringify(account));
             }
 
         }
