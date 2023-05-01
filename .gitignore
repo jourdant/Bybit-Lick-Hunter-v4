@@ -1,5 +1,7 @@
 test.js
 .env
-settings.json
-version.json
-account.json
+**settings.json
+**version.json
+**account.json
+**min_order_sizes.json
+**research.json
