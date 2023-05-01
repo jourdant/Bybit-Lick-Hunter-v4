@@ -1,5 +1,6 @@
 FROM node:20-alpine
 RUN apk update 
+RUN apk add --no-cache tzdata
 
 # Install dependencies
 COPY ./package*.json /app/
