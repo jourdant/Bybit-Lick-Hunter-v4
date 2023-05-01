@@ -1,5 +1,6 @@
 test.js
 .env
+node_modules
 **settings.json
 **version.json
 **account.json
