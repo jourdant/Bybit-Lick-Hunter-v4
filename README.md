@@ -87,10 +87,19 @@ docker build -t lick-hunter .
 ```
 
 ```
-docker run -p 3000:3000 --name lick-hunter-container lick-hunter
+docker run -p 3000:3000 --env-file .env --name lick-hunter-container lick-hunter
 ```
 
-*Dont forget to set your api inside the dockerfile*
+**Make sure you add your API details to your .env file outside your container.**
+
+If you want to mount a path into your container and store the json files outside the container, you can use the following syntax:
+
+```
+docker run -p 3000:3000 --env-file .env --mount type=bind,source="$(pwd)"/config,target=/app/config --name lick-hunter-container lick-hunter
+```
+
+**The above assumes you have a ```.env``` file with your API keys and a folder ```./config``` with your json files inside.**
+
 
 ```
 
@@ -103,6 +112,7 @@ ENV FIRST_START=false
 
 ### Settings Explained:
 ```
+CONFIG_ROOT=./ /// If you want to store your json files in another directory, update this path. This is especially useful if you are running in docker.
 API_KEY = apikeyhere  /// Bybit API Key
 API_SECRET = apisecrether /// Bybit API Key
 GUI_PASSWORD = password // Your personal password to access the gui
